@@ -2,17 +2,19 @@ import { config } from "dotenv";
 import { Client, GatewayIntentBits } from "discord.js";
 import { createServer } from 'http';
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ 
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+});
 
-const channelId = process.env.DISCORD_CHANNEL_ID;
+/*const channelId = process.env.DISCORD_CHANNEL_ID;*/
 
 config();
 
-// Create a simple HTTP server to receive requests
+// Create a simple HTTP server to receive cron-job requests
 createServer((req, res) => {
-  console.log(`Solicitud recibida: ${req.url} desde ${req.headers['user-agent']}`);
+  console.log(`Request received: ${req.url} from ${req.headers['user-agent']}`);
   if (req.url === '/update-title') {
-    updateChannelTitle();
+    updateValue();
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end(`Estamos en el ${getLaCryptaValue()}`);
   } else {
@@ -21,6 +23,7 @@ createServer((req, res) => {
   }
 }).listen(3000);
 
+// return La Crypta value based on the current month
 const getLaCryptaValue = () => {
   const lacryptaValues = [
     "🤍 | MES DE LA HONESTIDAD",
@@ -46,11 +49,59 @@ const getLaCryptaValue = () => {
   return lacryptaValues[lacryptaIndex];
 };
 
+// Bot ready event
 client.once("ready", () => {
-  console.log(`Bot ${client.user.tag} iniciado...`);
+  console.log(`${client.user.tag} bot is alive!`);
+  updateValue();
+  //setInterval(updateValue, 60 * 1000);
 });
 
-async function updateChannelTitle() {
+// Update value of the bot's nickname
+async function updateValue() {
+  // Prevent overlapping updates
+  if (isUpdating) return; 
+  isUpdating = true;
+  try {
+    const guild = client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
+    if (!guild) {
+      console.log('Server not found');
+      return;
+    }
+
+    // Get the bot's member object
+    const botMember = guild.members.me; 
+    // Get the new value
+    const newValue = getLaCryptaValue();
+    const currentValue = botMember.nickname || botMember.user.username;
+
+    // If value is the same, exit
+    if (currentValue === newValue) {
+      console.log('Value is the same, exiting...');
+      return;
+    }
+
+    // Verify that the new nickname is within the 32-character limit
+    if (newValue.length > 32) {
+      console.log('Bot nickname is too long, truncating...');
+      await botMember.setNickname(newValue.slice(0, 32));
+    } else {
+      await botMember.setNickname(newValue);
+    } 
+    console.log('Value updated to:', newValue);
+  } catch (error) {
+    console.error(`Error: Couldn't update value: ${error}`);
+  } finally {
+    isUpdating = false;
+  }
+
+  // Shut down the bot after 5 seconds
+  setTimeout(() => {
+    client.destroy();
+    process.exit(0);
+  }, 5000);
+}
+
+/*async function updateChannelTitle() {
   try {
     const channel = await client.channels.fetch(channelId);
     if (channel) {
@@ -68,6 +119,6 @@ async function updateChannelTitle() {
     client.destroy();
     process.exit(0);
   }, 5000);
-}
+}*/
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_BOT_TOKEN);
