@@ -5,6 +5,7 @@ import { createServer } from 'http';
 const client = new Client({ 
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
 });
+let isUpdating = false;
 
 /*const channelId = process.env.DISCORD_CHANNEL_ID;*/
 
