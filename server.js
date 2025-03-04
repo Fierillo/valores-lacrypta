@@ -3,11 +3,14 @@ import { Client, GatewayIntentBits } from "discord.js";
 import { createServer } from 'http';
 
 const client = new Client({ 
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.GuildMessages, 
+    GatewayIntentBits.MessageContent
+  ]
 });
 let isUpdating = false;
-
-/*const channelId = process.env.DISCORD_CHANNEL_ID;*/
 
 config();
 
@@ -26,6 +29,7 @@ createServer((req, res) => {
 
 // return La Crypta value based on the current month
 const getLaCryptaValue = () => {
+  /*return "🔧 | MES TEST2"*/;
   const lacryptaValues = [
     "🤍 | MES DE LA HONESTIDAD",
     "🤝 | MES DE LA SINERGIA",
@@ -53,7 +57,7 @@ const getLaCryptaValue = () => {
 // Bot ready event
 client.once("ready", () => {
   console.log(`${client.user.tag} bot is alive!`);
-  updateValue();
+  setTimeout(updateValue, 2100);
   //setInterval(updateValue, 60 * 1000);
 });
 
@@ -89,6 +93,8 @@ async function updateValue() {
       await botMember.setNickname(newValue);
     } 
     console.log('Value updated to:', newValue);
+    const channel = guild.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
+    if (channel && channel.isTextBased()) await channel.send(`# ¡EL ${newValue} HA COMENZADO!`);
   } catch (error) {
     console.error(`Error: Couldn't update value: ${error}`);
   } finally {
