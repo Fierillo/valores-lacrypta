@@ -54,8 +54,6 @@ const getLaCryptaValue = () => {
 // Bot ready event
 client.once("ready", () => {
   console.log(`${client.user.tag} bot is alive!`);
-  setTimeout(updateValue, 2100);
-  //setInterval(updateValue, 60 * 1000);
 });
 
 // Update value of the bot's nickname
