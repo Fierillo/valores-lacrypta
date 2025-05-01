@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { Client, GatewayIntentBits } from "discord.js";
-import { createServer } from 'http';
+import cron from 'node-cron'
 
 const client = new Client({ 
   intents: [
@@ -14,18 +14,15 @@ let isUpdating = false;
 
 config();
 
-// Create a simple HTTP server to receive cron-job requests
-createServer((req, res) => {
-  console.log(`Request received: ${req.url} from ${req.headers['user-agent']}`);
-  if (req.url === '/update-title') {
-    updateValue();
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end(`Estamos en el ${getLaCryptaValue()}`);
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
+// Cron job to call updateValue every first day of a month
+cron.schedule('00 00 1 * *', () => { // every first day of the month at 00:00
+    console.log('⏰ Cron fired en:', new Date().toString())
+    updateValue()
+  },
+  {
+    timezone: 'America/Buenos_Aires' // UTC-3
   }
-}).listen(3000);
+)
 
 // return La Crypta value based on the current month
 const getLaCryptaValue = () => {
@@ -100,12 +97,6 @@ async function updateValue() {
   } finally {
     isUpdating = false;
   }
-
-  // Shut down the bot after 5 seconds
-  setTimeout(() => {
-    client.destroy();
-    process.exit(0);
-  }, 5000);
 }
 
 /*async function updateChannelTitle() {
